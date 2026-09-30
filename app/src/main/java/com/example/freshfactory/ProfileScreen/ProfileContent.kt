@@ -1,11 +1,18 @@
 package com.example.freshfactory.ProfileScreen
 
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -16,7 +23,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.freshfactory.DataBase.UserProfile
 import com.example.freshfactory.ui.theme.FreshFactoryTheme
+import coil.compose.AsyncImage
 
 data class ProfileCategory(
     val title: String,
@@ -58,6 +68,10 @@ fun ProfileMainContent(
     userProfile: UserProfile?,
     onEditClick: () -> Unit
 ) {
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var showImagePickerSheet by remember { mutableStateOf(false) }
+
     val categories = listOf(
         ProfileCategory("Edit Profile", Icons.Default.Person, onEditClick),
         ProfileCategory("My Orders", Icons.Default.ShoppingCart),
@@ -88,16 +102,51 @@ fun ProfileMainContent(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.size(80.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                when {
+                    selectedImageUri != null -> {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    capturedBitmap != null ->{
+                    Image(
+                        bitmap = capturedBitmap!!.asImageBitmap(),
+                        contentDescription = "Profile Photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    }
+                    else -> {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
             }
-            
+            // Gallery Launcher
+            val galleryLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.PickVisualMedia()
+            ) { uri: Uri? ->
+                uri?.let { selectedImageUri = it }
+            }
+            // Camera Launcher
+            val cameraLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.TakePicturePreview()
+            ) { bitmap: Bitmap? ->
+                bitmap?.let {
+                    capturedBitmap = it
+                    selectedImageUri = null
+                }
+            }
+
             IconButton(
-                onClick = onEditClick,
+                onClick = { showImagePickerSheet = true },
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
@@ -109,6 +158,24 @@ fun ProfileMainContent(
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(20.dp)
                 )
+            }
+
+            // Render Bottom sheet Dashboard when triggered
+            if (showImagePickerSheet) {
+                ImagePickerBottomSheet(
+                    onDismissRequest = { showImagePickerSheet = false },
+                    onCameraSelect = {
+                        cameraLauncher.launch(null)
+                    },
+                    onGallerySelect = {
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onRemoveSelect = {
+                        selectedImageUri = null
+                    }
+                    )
             }
         }
 
@@ -139,6 +206,87 @@ fun ProfileMainContent(
                     color = MaterialTheme.colorScheme.outlineVariant
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ImagePickerBottomSheet(
+    onDismissRequest:() -> Unit,
+    onCameraSelect:() -> Unit,
+    onGallerySelect:() -> Unit,
+    onRemoveSelect:() -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Select Profile Photo",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            // Take photo
+            ListItem(
+                headlineContent = {Text("Click Photo") },
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Camera",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        onCameraSelect()
+                        onDismissRequest()
+                    }
+            )
+
+            // Choose from Gallery
+            ListItem(
+                headlineContent = { Text("Choose from Gallery") },
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Default.PhotoLibrary,
+                        contentDescription = "Gallery",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        onGallerySelect()
+                        onDismissRequest()
+                    }
+            )
+
+            // Remove Current Photo
+            ListItem(
+                headlineContent = { Text("Remove Photo", color = MaterialTheme.colorScheme.error) },
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Remove",
+                        tint = MaterialTheme.colorScheme.error)
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        onRemoveSelect()
+                        onDismissRequest()
+                    }
+            )
         }
     }
 }
