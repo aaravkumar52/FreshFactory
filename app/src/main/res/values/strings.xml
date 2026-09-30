@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Fresh Factory</string>
+    <string name="fresh_factory">Fresh Factory</string>
+    <string name="cart">Cart</string>
+    <string name="milk_bottle_image">Milk Bottle image</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="price_60">₹60</string>
+    <string name="price_66">₹66</string>
+    <string name="off_6">₹6 OFF</string>
+    <string name="milk_1l">Milk 1L</string>
+    <string name="buy_now">Buy Now</string>
+    <string name="ghee_1l">Ghee 1L</string>
+    <string name="price_1100">₹1100</string>
+    <string name="price_1200">₹1200</string>
+    <string name="off_100">₹100 OFF</string>
+    <string name="dahi_image">Dahi image</string>
+    <string name="price_90">₹90</string>
+    <string name="price_95">₹95</string>
+    <string name="off_5">₹5 OFF</string>
+    <string name="dahi_1kg">Dahi 1kg</string>
+    <string name="paneer_image">Paneer image</string>
+    <string name="price_400">₹400</string>
+    <string name="price_425">₹425</string>
+    <string name="off_25">₹25 OFF</string>
+    <string name="paneer_1kg">Paneer 1Kg</string>
+    <string name="profile">Profile</string>
+</resources>
