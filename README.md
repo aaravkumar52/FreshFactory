@@ -71,8 +71,6 @@ com.example.freshfactory/
 │   ├── AppDatabase.kt              # Room Database singleton
 │   ├── UserDao.kt                  # Room Data Access Object (DAO)
 │   └── UserProfile.kt              # Room Entity model
-├── Items/
-│   └── MilkBottle.kt               # Product entity model
 ├── ProfileScreen/
 │   ├── ProfileContent.kt           # Profile UI, Edit modal & Image Picker Sheet
 │   └── ProfileViewModel.kt         # Profile state management & Room DB interactions
