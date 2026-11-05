@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.freshfactory.DataBase.UserProfile
+import com.example.freshfactory.OrdersScreen.MyOrdersScreen
 import com.example.freshfactory.ui.theme.FreshFactoryTheme
 import coil.compose.AsyncImage
 
@@ -42,11 +43,17 @@ data class ProfileCategory(
 )
 
 @Composable
-fun ProfileContent(viewModel: ProfileViewModel = viewModel()) {
+fun ProfileContent(
+    viewModel: ProfileViewModel = viewModel(),
+    onMyOrdersClick: (() -> Unit)? = null
+) {
     var isEditing by remember { mutableStateOf(false) }
+    var isViewingOrders by remember { mutableStateOf(false) }
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
-    if (isEditing) {
+    if (isViewingOrders) {
+        MyOrdersScreen(onBackClick = { isViewingOrders = false })
+    } else if (isEditing) {
         EditProfileContent(
             userProfile = userProfile,
             onSave = { name, phone, email ->
@@ -58,7 +65,14 @@ fun ProfileContent(viewModel: ProfileViewModel = viewModel()) {
     } else {
         ProfileMainContent(
             userProfile = userProfile,
-            onEditClick = { isEditing = true }
+            onEditClick = { isEditing = true },
+            onMyOrdersClick = {
+                if (onMyOrdersClick != null) {
+                    onMyOrdersClick()
+                } else {
+                    isViewingOrders = true
+                }
+            }
         )
     }
 }
@@ -66,7 +80,8 @@ fun ProfileContent(viewModel: ProfileViewModel = viewModel()) {
 @Composable
 fun ProfileMainContent(
     userProfile: UserProfile?,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onMyOrdersClick: () -> Unit = {}
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -74,7 +89,7 @@ fun ProfileMainContent(
 
     val categories = listOf(
         ProfileCategory("Edit Profile", Icons.Default.Person, onEditClick),
-        ProfileCategory("My Orders", Icons.Default.ShoppingCart),
+        ProfileCategory("My Orders", Icons.Default.ShoppingCart, onMyOrdersClick),
         ProfileCategory("My Address", Icons.Default.LocationOn),
         ProfileCategory("Payment Methods", Icons.Default.AccountBox),
         ProfileCategory("Notification", Icons.Default.Notifications),
@@ -402,7 +417,15 @@ fun ProfileOptionItem(category: ProfileCategory) {
 fun ProfileContentPreview() {
     FreshFactoryTheme {
         Surface {
-            ProfileContent()
+            // ProfileMainContent accepts UI state directly, avoiding instantiation of ProfileViewModel during preview
+            ProfileMainContent(
+                userProfile = UserProfile(
+                    name = "John Doe",
+                    email = "username@example.com",
+                    phoneNumber = "1234567890"
+                ),
+                onEditClick = {}
+            )
         }
     }
 }
